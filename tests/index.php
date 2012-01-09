@@ -2,29 +2,22 @@
 <html>
 <head>
   <title>Jasmine Test Runner</title>
-  <link rel="stylesheet" type="text/css" href="lib/jasmine-1.0.2/jasmine.css">
-  <script type="text/javascript" src="lib/jasmine-1.0.2/jasmine.js"></script>
-  <script type="text/javascript" src="lib/jasmine-1.0.2/jasmine-html.js"></script>
 
-  <!-- include source files here... -->
-  <script id="jquery" type="text/javascript" src="../../jquery/jquery-1.7.1.js"></script>
-  <script type="text/javascript" src="../src/jquery.flickbook.js"></script>
-  
-
-  <!-- include spec files here... -->
-  <script type="text/javascript" src="spec/flickbookSpec.js"></script>
-
+  <style>
+	  iframe {
+		  width: 100%;
+	  }
+	  
+  </style>
 
 </head>
 <body>
-
-<script type="text/javascript">
-  
-	jasmine.getEnv().addReporter(new jasmine.TrivialReporter());
-	jasmine.getEnv().execute();
-  
-
-</script>
+	<?php
+		$versions = explode(",", "1.7.1,1.7,1.6.4,1.6.3,1.6.2,1.6.1,1.6,1.5.2,1.5.1,1.5,1.4.4,1.4.3,1.4.2,1.4.1,1.4");
+		foreach($versions as $version) {
+			echo "<iframe src=\"testSuite.php?jquery-version=$version\"></iframe>";
+		}
+	?>
 
 </body>
 </html>

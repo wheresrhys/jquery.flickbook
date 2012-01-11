@@ -14,7 +14,7 @@ describe("jquery.flickbook", function() {
 		runs(function() {
 			image.flickbook(opts);
 		});
-		waits(1000);
+		waits(500);
 		runs(function(){
 			var fetched = image.data("flickbook-images"),
 				count = 0;
@@ -26,6 +26,29 @@ describe("jquery.flickbook", function() {
 			expect(count).toBe(expectedCount);
 		});
 	}
+	
+	it("won't try and initialise twice on the same element", function() {
+		runs(function() {
+			image.addClass("flickbooked").flickbook({
+				images:["../img/Image0281.jpg","../img/Image0283.jpg","../img/Image0284.jpg"]
+			});
+		});
+		waits(1000);
+		runs(function(){
+			expect(image.data("flickbook-images")).toBeUndefined();
+		})
+	});
+	it("won't initialise when no images provided", function() {
+		runs(function() {
+			image.addClass("flickbooked").flickbook({
+				images:null
+			});
+		});
+		waits(1000);
+		runs(function(){
+			expect(image.data("flickbook-images")).toBeUndefined();
+		})
+	});
 	
 	describe("Image loading", function(){
 		it("uses all available images", function() {
@@ -90,29 +113,6 @@ describe("jquery.flickbook", function() {
 				keepOriginalImage: true
 			}, 3);
 		});
-		it("won't try and initialise twice on the same element", function() {
-			runs(function() {
-				image.addClass("flickbooked").flickbook({
-					images:["../img/Image0281.jpg","../img/Image0283.jpg","../img/Image0284.jpg"]
-				});
-			});
-			waits(1000);
-			runs(function(){
-				expect(image.data("flickbook-images")).toBeUndefined();
-			})
-		});
-		it("won't initialise when no images provided", function() {
-			runs(function() {
-				image.addClass("flickbooked").flickbook({
-					images:null
-				});
-			});
-			waits(1000);
-			runs(function(){
-				expect(image.data("flickbook-images")).toBeUndefined();
-			})
-		});
-		
 //		it("uses the image root template properly", function() {});
 //		it("works properly when images is an integer", function() {});
 		

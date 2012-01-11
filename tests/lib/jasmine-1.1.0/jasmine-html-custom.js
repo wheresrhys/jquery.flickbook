@@ -105,6 +105,7 @@ jasmine.TrivialReporter.prototype.reportRunnerResults = function(runner) {
   this.runnerMessageSpan.replaceChild(this.createDom('a', { className: 'description', href: '?'}, message), this.runnerMessageSpan.firstChild);
 
   this.finishedAtSpan.appendChild(document.createTextNode("Finished at " + new Date().toString()));
+  jasmine.getEnv().onComplete && jasmine.getEnv().onComplete();
 };
 
 jasmine.TrivialReporter.prototype.reportSuiteResults = function(suite) {

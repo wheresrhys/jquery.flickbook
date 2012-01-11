@@ -16,7 +16,7 @@ describe("jquery.flickbook", function() {
 		});
 		waits(1000);
 		runs(function(){
-			var fetched = image.data("flickbook-images");
+			var fetched = image.data("flickbook-images"),
 				count = 0;
 			for(var key in fetched) {
 				if(fetched.hasOwnProperty(key)) {
@@ -73,6 +73,11 @@ describe("jquery.flickbook", function() {
 				keepOriginalImage: true
 			}, 4);
 		});
+		it("defaults to keeping the original image", function() {
+			checkCount({
+				images:["../img/Image0282.jpg","../img/Image0283.jpg","../img/Image0284.jpg"]
+			}, 4);
+		});
 		it("removes the original image when requested", function() {
 			checkCount({
 				images:["../img/Image0282.jpg","../img/Image0283.jpg","../img/Image0284.jpg"],
@@ -114,35 +119,214 @@ describe("jquery.flickbook", function() {
 	});	  
 	
 	describe("starting and stopping of animations", function(){
+		var speed = 100;
+		
+		function initSlowFB (obj) {
+			image.flickbook($.extend(true, {}, {
+				images: "../img/Image0281.jpg,../img/Image0282.jpg,../img/Image0283.jpg,../img/Image0284.jpg,../img/Image0285.jpg,../img/Image0286.jpg,../img/Image0287.jpg",
+				speed: speed
+			}, obj));
+		};
+		
+		function pauseThen(func) {
+			waits(3*speed);
+			runs(func);
+		}
 		
 		// note te way to check is to check ifplaying is true aor if the interval is not null
-		it("defaults to mousein and out events", function() {});
-		it("default events can be overridden", function() {});
-		it("can handle multiple events for starting the plugin", function() {});
-		it("can handle multiple events for stopping the plugin", function() {});
-		it("can have the same event starting and stopping the plugin", function() {});
-		it("can have the same event starting and stopping the plugin when there are lots of events in play", function() {});
-		it("starts automatically when autolad is true", function() {});
-		it("returns flickbook to start when onstop is set to reset", function() {});
-		it("", function() {});
-		it("", function() {});
-		it("", function() {});
-		it("", function() {});
+		it("defaults to start and stop on mouseover/out events", function() {
+			var imageSrc;
+			runs(function() {
+				initSlowFB();
+				image.trigger("mouseover");
+			});
+			pauseThen(function() {
+				expect(image.attr("src")).toNotBe("../img/Image0281.jpg");
+				image.trigger("mouseout");
+				imageSrc = image.attr("src");
+			});
+			pauseThen(function() {
+				expect(image.attr("src")).toBe(imageSrc);
+			});
+		});
+		it("allows default events to be overridden", function() {
+			var src;
+			runs(function() {
+				initSlowFB({
+					startEvent: "click",
+					stopEvent: "focus"
+				});
+				image.trigger("mouseover");
+			});
+			pauseThen(function() {
+				//check mouseover didn't start the flickbook
+				expect(image.attr("src")).toBe("../img/Image0281.jpg");
+				//start the flickbook
+				image.trigger("click");
+			});
+			pauseThen(function() {
+				src = image.attr("src")
+				//check flickbook has started
+				expect(src).toNotBe("../img/Image0281.jpg");
+				image.trigger("mouseout");
+			});
+			pauseThen(function() {
+				//chcek flickbook is not stopped
+				expect(image.attr("src")).toNotBe(src);
+				//stop the flickbook
+				image.trigger("focus");
+				src = image.attr("src");
+			});
+			pauseThen(function() {
+				//check flickbook is stopped
+				expect(image.attr("src")).toBe(src);
+			});
+		});
+		it("can handle multiple events for starting the plugin", function() {
+			var src;
+			runs(function() {
+				initSlowFB({
+					startEvent: "mouseover click"
+				});
+				image.trigger("mouseover");
+			});
+			pauseThen(function() {
+				src = image.attr("src")
+				//check flickbook has started
+				expect(src).toNotBe("../img/Image0281.jpg");
+				image.trigger("stop.flickbook");
+			});
+			runs(function() {
+				image.trigger("click");
+			});
+			pauseThen(function() {
+				src = image.attr("src")
+				//check flickbook has started
+				expect(src).toNotBe("../img/Image0281.jpg");
+				image.trigger("stop.flickbook");
+			});
+		});
+		it("can handle multiple events for stopping the plugin", function() {
+			var src;
+			runs(function() {
+				initSlowFB({
+					stopEvent: "mouseout click"
+				});
+				image.trigger("start.flickbook");
+			});
+			pauseThen(function() {
+				image.trigger("mouseout");
+				src = image.attr("src");
+			});
+			pauseThen(function() {
+				//check flickbook is stopped
+				expect(image.attr("src")).toBe(src);
+			});			
+			runs(function() {
+				image.trigger("start.flickbook");
+			});
+			pauseThen(function() {
+				image.trigger("click");
+				src = image.attr("src");
+			});
+			pauseThen(function() {
+				//check flickbook is stopped
+				expect(image.attr("src")).toBe(src);
+			});			
+		});
+		it("can have the same event starting and stopping the plugin", function() {
+			var src;
+			runs(function() {
+				initSlowFB({
+					startEvent: "click",
+					stopEvent: "click"
+				});
+				image.trigger("click");
+			});
+			pauseThen(function() {
+				src = image.attr("src")
+				//check flickbook has started
+				expect(src).toNotBe("../img/Image0281.jpg");
+				image.trigger("click");
+				src = image.attr("src");
+			});
+			pauseThen(function() {
+				//check flickbook is stopped
+				expect(image.attr("src")).toBe(src);
+			});	
+		});
+		it("can have the same event starting and stopping the plugin when there are lots of events in play", function() {
+			var src;
+			runs(function() {
+				initSlowFB({
+					startEvent: "click mouseover focus",
+					stopEvent: "click focus mouseout"
+				});
+				image.trigger("click");
+			});
+			pauseThen(function() {
+				src = image.attr("src")
+				//check flickbook has started
+				expect(src).toNotBe("../img/Image0281.jpg");
+				image.trigger("click");
+				src = image.attr("src");
+			});
+			pauseThen(function() {
+				//check flickbook is stopped
+				expect(image.attr("src")).toBe(src);
+			});
+		});
+		it("doesn't start automatically by default", function() {
+			runs(function() {
+				initSlowFB();
+			});
+			pauseThen(function() {
+				expect(image.attr("src")).toBe("../img/Image0281.jpg");
+			});
+		});
+		it("starts automatically when autolad is true", function() {
+			runs(function() {
+				initSlowFB({autoStart: true});
+			});
+			pauseThen(function() {
+				expect(image.attr("src")).toNotBe("../img/Image0281.jpg");
+			});
+		});
+		it("returns flickbook to start when onstop is set to reset", function() {
+			runs(function() {
+				initSlowFB({onStop: "reset"});
+				image.trigger("start.flickbook");
+			});
+			pauseThen(function() {
+				image.trigger("stop.flickbook");
+				expect(image.attr("src")).toBe("../img/Image0281.jpg");
+			});
+		});
+		it("by default returns flickbook to start", function() {
+			runs(function() {
+				initSlowFB();
+				image.trigger("start.flickbook");
+			});
+			pauseThen(function() {
+				image.trigger("stop.flickbook");
+				expect(image.attr("src")).toBe("../img/Image0281.jpg");
+			});
+		});
+		it("pauses when onstop is set to pause", function() {
+			var imageSrc;
+			runs(function() {
+				initSlowFB({onStop: "pause"});
+				image.trigger("start.flickbook");
+			});
+			pauseThen(function() {
+				image.trigger("stop.flickbook");
+				imageSrc = image.attr("src");
+			});
+			pauseThen(function() {
+				expect(((image.attr("src") !== "../img/Image0281.jpg") && (imageSrc === image.attr("src")))).toBe(true);
+			});
+		});
 	});	 
 	
-	describe("preloading of images", function(){
-		it("", function() {});
-		it("", function() {});
-		it("", function() {});
-		it("", function() {});
-		it("", function() {});
-		it("", function() {});
-		it("", function() {});
-		it("", function() {});
-		it("", function() {});
-		it("", function() {});
-		it("", function() {});
-		it("", function() {});
-	});	 
 
 });

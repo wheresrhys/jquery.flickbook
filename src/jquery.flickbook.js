@@ -1,35 +1,46 @@
-                                                                     
-                                                                     
-                                                                     
-                                             
-$.fn.flickBook = function(opts) {
-	var fetchedImages = {};
+$.fn.flickbook = function(opts) {
 	
-    function fetchImages(arr) {
-		var result = [];
-        for(var i = 0, il = arr.length; i<il; i++) {
-            fetchImage(i);
-        }
-        
-		function fetchImage(index) {
-			if (fetchedImages[arr[index]]) {
-				result[index] = arr[index];
+    function fetchImages(arr, originalSrc, keepOriginal) {
+		var shift = 0,
+			$body = $("body");
+		// put in a function due to the need to keep a good reference to i
+		function loadImage(index) {
+			// TODO: can I do better than appending to body?
+			var loader = $("<img style=\"display:none\" src=\"" + arr[index] + "\">").appendTo($body).load(function () {
+				result[index + shift] = arr[index];
+				cache[arr[index]] = true;
+				loader.remove();
+			});
+		}
+		
+		var result = [],
+			cache = $.fn.flickbook.fetchedImages,
+			i = 0,
+			il = arr.length;
+		
+		if(keepOriginal && (originalSrc != arr[0])) {
+			result[0] = originalSrc;
+			cache[originalSrc] = true;
+			shift = 1;
+		}
+		
+        for(; i<il; i++) {
+            if (cache[arr[i]]) {
+				result[i + shift] = arr[i];
 			} else {
-				var loader = $("<img style=\"display:none\" src=\"" + arr[index] + "\">").appendTo($("body")).load(function () {
-					result[index] = arr[index];
-					fetchedImages[arr[index]] = true;
-					loader.remove();
-				});
+				loadImage(i);
 			}
         }
+        // can return result synchronously as it is a reference and will still get populated by the asynchronous callbacks
 		return result;
-    }	
+    }
+	
 	function processEvents() {
 		var tempStart = opts.startEvent.split(" ").sort(),
 			tempStop = opts.stopEvent.split(" ").sort();
 		startEventLoop: for(var i=0, il = tempStart.length;i<il;i++) {
 			for(var j=0, jl = tempStop.length;j<jl;j++) {
-				if(tempStart[i] == tempStop[j]) {
+				if(tempStart[i] === tempStop[j]) {
 					stopStartEvents.push(tempStart[i])
 					tempStop.splice(j,1);
 					continue startEventLoop;
@@ -42,20 +53,16 @@ $.fn.flickBook = function(opts) {
 		stopStartEvents = stopStartEvents.join(" ");
 	}
 
-	opts = $.extend($.fn.flickBook.defaults, opts);
+	opts = $.extend($.fn.flickbook.defaults, opts);
 	
-	var index = false,
+	var index,
 		stopEvents = [], 
 		startEvents = [], 
 		stopStartEvents = [],
-		images = [],
-        imageCount = opts.images.length,
 		binder = $.fn.on ? "on": "bind";
 	
-    if (typeof opts.images == "string"){
-		opts.images = string.split(",");
-	} else if (typeof opts.images == "number" && root.match(/{{\w}}/)) {
-		index = 1;
+    if (typeof opts.images === "string"){
+		opts.images = opts.images.split(",");
 	} else if (!$.isArray(opts.images)){
 		return;
 	}
@@ -64,23 +71,34 @@ $.fn.flickBook = function(opts) {
     
 	return $(this).each(function() {
 		var $this = $(this),
-			hereImages = $this.data("images") || opts.images.slice(),
-			hereImageCount = hereImages.length,
+			images,
+			imageCount,
 			playing = false,
 			to,
 			index = -1;
 		
-		if(!$.isArray(hereImages)) {
-			hereImages = hereImages.split(",");
+		images = ($this.data("flickbook-images") || opts.images.slice());
+		
+		if($this.hasClass("flickbooked")) {
+			return;
 		}
 		
+		if(!$.isArray(images)) {
+			images = images.split(",");
+		}
+		imageCount = images.length
+		
+		
+		//TODO throw some errors
+		//
+	//	} else if (typeof images == "number" && root.match(/{{\w}}/)) {
+	//		index = 1;
+	//}
+	
 		function start () {
 			if (!playing) {
 				to = setInterval(function() {
-					index = (index+1) % hereImageCount;
-					while(!hereImages[index]){
-						index = (index+1) % hereImageCount;
-					}
+					index = (index+1) % imageCount;
 					showImage();
 				}, opts.speed);
 				playing = true;
@@ -90,43 +108,55 @@ $.fn.flickBook = function(opts) {
 		function stop() {
 			if (playing) {
 				clearInterval(to);
-				(opts.onStop == "reset") && (index = hereImageCount-1);
+				if (opts.onStop === "reset") {
+					index = 0;
+				}
 				showImage();
 				playing = false;
 			}
 		}
 		
 		function showImage() {
-            $this.attr("src", hereImages[index]);
+			while(!images[index]){
+				index = (index+1) % imageCount;
+			}
+            $this.attr("src", images[index]);
         }
 		
-		hereImages = fetchImages(hereImages);
+		images = fetchImages(images, $this.attr("src"), opts.keepOriginalImage);
+		$this.data("flickbook-images", images);
 		
-		$this[binder]("start.flickBook", start)
-			[binder]("stop.flickBook", stop)
+		$this[binder]("start.flickbook", start)
+			[binder]("stop.flickbook", stop)
 			[binder](stopEvents, function() {
-				$this.trigger("stop.flickBook");
+				$this.trigger("stop.flickbook");
 			})
 			[binder](startEvents, function() {
-				$this.trigger("start.flickBook");
+				$this.trigger("start.flickbook");
 			})
 			[binder](stopStartEvents, function() {
-				playing ? $this.trigger("stop.flickBook") : $this.trigger("start.flickBook");
+				playing ? $this.trigger("stop.flickbook") : $this.trigger("start.flickbook");
 			});
 		
 		opts.autoStart && start();
     });
 }
 
-$.fn.flickBook.defaults = {
+$.fn.flickbook.defaults = {
 	images: null, // can take arrya, cooma separted string or an integer. idf one has same src as img element then ignore it
+	padImageIntegersBy: 0,
 	speed: 100,
 	root: "", // can be a string, on to which teh image is appended, or a string with {{}} into which teh image is insterted
-	imageType: "separate", // vertical sprite, horizontal sprite
-	startEvent: "mouseover click", // or click, dbl click
-	stopEvent: "mouseout click", // or click, dbl click, hover
-	autoStart: true,
-	onStop: "reset" // or pause
+//	imageType: "separate", // vertical sprite, horizontal sprite
+	startEvent: "mouseover", // or click, dbl click
+	stopEvent: "mouseout", // or click, dbl click, hover
+	autoStart: false,
+	onStop: "reset", // or pause
+	keepOriginalImage: true,// last, false
+	random: false 
 	// to do include the jiggling around effect
 };
+
+//list of already fetched images available to all instances
+$.fn.flickbook.fetchedImages = {};
 

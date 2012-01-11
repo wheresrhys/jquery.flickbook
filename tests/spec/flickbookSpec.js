@@ -326,6 +326,18 @@ describe("jquery.flickbook", function() {
 				expect(((image.attr("src") !== "../img/Image0281.jpg") && (imageSrc === image.attr("src")))).toBe(true);
 			});
 		});
+		it("doesn't seize up when no images are available", function() {
+			runs(function() {
+				image.flickbook({
+					images: "/Image0281.jpg,/Image0282.jpg,/Image0283.jpg,/Image0284.jpg"
+				}).trigger("start.flickbook");
+			});
+			pauseThen(function() {
+				expect("this code to be called").toBe("this code to be called");
+			})
+			
+		})
+		
 	});	 
 	
 

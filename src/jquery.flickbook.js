@@ -1,43 +1,78 @@
+/**
+ * @name jQuery.flickbook
+ * @public
+ * @function
+ * @description	Turns an image into a flickbook type widget, which cycles through a series of images
+ * @param {Object} opts	Object that sets configurable options (see $.fn.flickbook.defaults)
+ */
 $.fn.flickbook = function(opts) {
 	
-    function fetchImages(arr, originalSrc, keepOriginal) {
-		var shift = 0,
-			$body = $("body");
-		// put in a function due to the need to keep a good reference to i
+	/**
+	 * @name fetchImages
+	 * @private
+	 * @function
+	 * @description preloads all images required by an instance of $.flickbook
+	 * @param {Array} images	Array of urls of the images
+	 * @param {String} originalSrc	Initial value of the image's src attribute
+	 * @param {Boolean} keepOriginal	Whether or not to include teh original image src in the list of images to be cycled through
+	 * @return {Array}	Array containing url of each image fetched (won't necessarily be fully populated when returned, but is gradually populated as each image load event fires)
+	 */
+    function fetchImages(images, originalSrc, keepOriginal) {
+				
+		/**
+		 * @name loadImage
+		 * @private
+		 * @function
+		 * @description preloads an image
+		 *				(This is put in a function in order to maintain a reference to the index of teh image when the callback runs asynchronously)
+		 * @param {Array} index		Position of the image in the images array
+		 */
 		function loadImage(index) {
-			// TODO: can I do better than appending to body?
-			var loader = $("<img style=\"display:none\" src=\"" + arr[index] + "\">").appendTo($body).load(function () {
-				result[index + shift] = arr[index];
+			var loader = $("<img style=\"display:none\" src=\"" + images[index] + "\">").appendTo($body).load(function () {
+				result[index + shift] = images[index];
 				cache[arr[index]] = true;
 				loader.remove();
 			});
 		}
 		
-		var result = [],
+		var shift = 0,
+			$body = $("body"),
+			result = [],
 			cache = $.fn.flickbook.fetchedImages,
 			i = 0,
-			il = arr.length;
+			il = images.length;
 		
-		if(keepOriginal && (originalSrc != arr[0])) {
+		// Put the original image at the start of the results when required
+		if(keepOriginal && (originalSrc != images[0])) {
 			result[0] = originalSrc;
 			cache[originalSrc] = true;
 			shift = 1;
 		}
 		
         for(; i<il; i++) {
-            if (cache[arr[i]]) {
-				result[i + shift] = arr[i];
+            if (cache[images[i]]) {
+				result[i + shift] = images[i];
 			} else {
 				loadImage(i);
 			}
         }
-        // can return result synchronously as it is a reference and will still get populated by the asynchronous callbacks
+		
+        // can return result synchronously as it is a reference and will still get populated by the asynchronous image load callbacks
 		return result;
     }
 	
+	/**
+	 * @name processEvents
+	 * @private
+	 * @function
+	 * @description	Analyses the events that stop and start the plugin and pulls out all the events used to both stop and start the plugin
+	 */
 	function processEvents() {
 		var tempStart = opts.startEvent.split(" ").sort(),
-			tempStop = opts.stopEvent.split(" ").sort();
+			tempStop = opts.stopEvent.split(" ").sort(),
+			stopEvents = [], 
+			startEvents = [], 
+			stopStartEvents = [];
 		startEventLoop: for(var i=0, il = tempStart.length;i<il;i++) {
 			for(var j=0, jl = tempStop.length;j<jl;j++) {
 				if(tempStart[i] === tempStop[j]) {
@@ -48,20 +83,17 @@ $.fn.flickbook = function(opts) {
 			}
 			startEvents.push(tempStart[i])
 		}
-		startEvents = startEvents.join(" ");
-		stopEvents = tempStop.join(" ");
-		stopStartEvents = stopStartEvents.join(" ");
+		opts.startEvents = startEvents.join(" ");
+		opts.stopEvents = tempStop.join(" ");
+		opts.stopStartEvents = stopStartEvents.join(" ");
 	}
 
 	opts = $.extend($.fn.flickbook.defaults, opts);
 	
 	var index,
-		stopEvents = [], 
-		startEvents = [], 
-		stopStartEvents = [],
 		binder = $.fn.on ? "on": "bind";
 	
-    if (typeof opts.images === "string"){
+    if (typeof opts.images === "string") {
 		opts.images = opts.images.split(",");
 	} else if (!$.isArray(opts.images)){
 		return;
@@ -69,7 +101,56 @@ $.fn.flickbook = function(opts) {
    
 	processEvents();
     
-	return $(this).each(function() {
+	return this.each(function() {
+		
+		/**
+		 * @name start
+		 * @function
+		 * @private
+		 * @description	Starts cycling through the available images
+		 */
+		function start () {
+			if (!playing) {
+				to = setInterval(function() {
+					index = (index+1) % imageCount;
+					showImage();
+				}, opts.speed);
+				playing = true;
+			}
+		}
+
+		/**
+		 * @name stop
+		 * @function
+		 * @private
+		 * @description	Stops cycling through the available images
+		 */
+		function stop() {
+			if (playing) {
+				clearInterval(to);
+				if (opts.onStop === "reset") {
+					index = 0;
+				}
+				showImage();
+				playing = false;
+			}
+		}
+
+		/**
+		 * @name start
+		 * @function
+		 * @private
+		 * @description	displays the next available image
+		 */
+		function showImage() {
+			var attempts = 0;
+			while(!images[index] && attempts < imageCount) {
+				index = (index+1) % imageCount;
+				attempts++;
+			}
+            $this.attr("src", images[index]);
+        }
+		
 		var $this = $(this),
 			images,
 			imageCount,
@@ -87,54 +168,19 @@ $.fn.flickbook = function(opts) {
 			images = images.split(",");
 		}
 		imageCount = images.length
-		
-		
-		//TODO throw some errors
-		//
-	//	} else if (typeof images == "number" && root.match(/{{\w}}/)) {
-	//		index = 1;
-	//}
-	
-		function start () {
-			if (!playing) {
-				to = setInterval(function() {
-					index = (index+1) % imageCount;
-					showImage();
-				}, opts.speed);
-				playing = true;
-			}
-		}
-		
-		function stop() {
-			if (playing) {
-				clearInterval(to);
-				if (opts.onStop === "reset") {
-					index = 0;
-				}
-				showImage();
-				playing = false;
-			}
-		}
-		
-		function showImage() {
-			while(!images[index]){
-				index = (index+1) % imageCount;
-			}
-            $this.attr("src", images[index]);
-        }
-		
+
 		images = fetchImages(images, $this.attr("src"), opts.keepOriginalImage);
 		$this.data("flickbook-images", images);
 		
 		$this[binder]("start.flickbook", start)
 			[binder]("stop.flickbook", stop)
-			[binder](stopEvents, function() {
+			[binder](opts.stopEvents, function() {
 				$this.trigger("stop.flickbook");
 			})
-			[binder](startEvents, function() {
+			[binder](opts.startEvents, function() {
 				$this.trigger("start.flickbook");
 			})
-			[binder](stopStartEvents, function() {
+			[binder](opts.stopStartEvents, function() {
 				playing ? $this.trigger("stop.flickbook") : $this.trigger("start.flickbook");
 			});
 		

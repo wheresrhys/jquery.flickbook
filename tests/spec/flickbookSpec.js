@@ -122,7 +122,7 @@ describe("jquery.flickbook", function() {
 		var speed = 100;
 		
 		function initSlowFB (obj) {
-			image.flickbook($.extend(true, {}, {
+			return image.flickbook($.extend(true, {}, {
 				images: "../img/Image0281.jpg,../img/Image0282.jpg,../img/Image0283.jpg,../img/Image0284.jpg,../img/Image0285.jpg,../img/Image0286.jpg,../img/Image0287.jpg",
 				speed: speed
 			}, obj));
@@ -137,8 +137,7 @@ describe("jquery.flickbook", function() {
 		it("defaults to start and stop on mouseover/out events", function() {
 			var imageSrc;
 			runs(function() {
-				initSlowFB();
-				image.trigger("mouseover");
+				initSlowFB().trigger("mouseover");
 			});
 			pauseThen(function() {
 				expect(image.attr("src")).toNotBe("../img/Image0281.jpg");
@@ -155,8 +154,7 @@ describe("jquery.flickbook", function() {
 				initSlowFB({
 					startEvent: "click",
 					stopEvent: "focus"
-				});
-				image.trigger("mouseover");
+				}).trigger("mouseover");
 			});
 			pauseThen(function() {
 				//check mouseover didn't start the flickbook
@@ -187,8 +185,7 @@ describe("jquery.flickbook", function() {
 			runs(function() {
 				initSlowFB({
 					startEvent: "mouseover click"
-				});
-				image.trigger("mouseover");
+				}).trigger("mouseover");
 			});
 			pauseThen(function() {
 				src = image.attr("src")
@@ -211,8 +208,7 @@ describe("jquery.flickbook", function() {
 			runs(function() {
 				initSlowFB({
 					stopEvent: "mouseout click"
-				});
-				image.trigger("start.flickbook");
+				}).trigger("start.flickbook");
 			});
 			pauseThen(function() {
 				image.trigger("mouseout");
@@ -240,8 +236,7 @@ describe("jquery.flickbook", function() {
 				initSlowFB({
 					startEvent: "click",
 					stopEvent: "click"
-				});
-				image.trigger("click");
+				}).trigger("click");
 			});
 			pauseThen(function() {
 				src = image.attr("src")
@@ -261,8 +256,7 @@ describe("jquery.flickbook", function() {
 				initSlowFB({
 					startEvent: "click mouseover focus",
 					stopEvent: "click focus mouseout"
-				});
-				image.trigger("click");
+				}).trigger("click");
 			});
 			pauseThen(function() {
 				src = image.attr("src")
@@ -294,8 +288,7 @@ describe("jquery.flickbook", function() {
 		});
 		it("returns flickbook to start when onstop is set to reset", function() {
 			runs(function() {
-				initSlowFB({onStop: "reset"});
-				image.trigger("start.flickbook");
+				initSlowFB({onStop: "reset"}).trigger("start.flickbook");
 			});
 			pauseThen(function() {
 				image.trigger("stop.flickbook");
@@ -304,8 +297,7 @@ describe("jquery.flickbook", function() {
 		});
 		it("by default returns flickbook to start", function() {
 			runs(function() {
-				initSlowFB();
-				image.trigger("start.flickbook");
+				initSlowFB().trigger("start.flickbook");
 			});
 			pauseThen(function() {
 				image.trigger("stop.flickbook");
@@ -315,15 +307,15 @@ describe("jquery.flickbook", function() {
 		it("pauses when onstop is set to pause", function() {
 			var imageSrc;
 			runs(function() {
-				initSlowFB({onStop: "pause"});
-				image.trigger("start.flickbook");
+				initSlowFB({onStop: "pause"}).trigger("start.flickbook");
 			});
 			pauseThen(function() {
 				image.trigger("stop.flickbook");
 				imageSrc = image.attr("src");
 			});
 			pauseThen(function() {
-				expect(((image.attr("src") !== "../img/Image0281.jpg") && (imageSrc === image.attr("src")))).toBe(true);
+				expect(image.attr("src")).toNotBe("../img/Image0281.jpg");
+				expect(image.attr("src")).toBe(imageSrc);
 			});
 		});
 		it("doesn't seize up when no images are available", function() {
@@ -336,9 +328,16 @@ describe("jquery.flickbook", function() {
 				//if the code enters an infiite loop in the handler for filckbook start (which indirectly calls showImage()) then this lien will never run
 				expect("this code to be called").toBe("this code to be called");
 			})
-			
 		})
-		
+		it("cycles randomly when it's set to do so", function() {
+			runs(function() {
+				spyOn(Math, 'random'); 
+				initSlowFB({random:true}).trigger("start.flickbook");
+			});
+			pauseThen(function() {
+				expect(Math.random).toHaveBeenCalled();
+			})
+		})		
 	});	 
 	
 

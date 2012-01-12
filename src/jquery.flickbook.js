@@ -37,7 +37,7 @@
 		var that = this;
 		this.imageSrcs = (this.$el.data(pluginName + "-images") || this.opts.images.slice());
 		
-		if(!$.isArray(this.images)) {
+		if(!$.isArray(this.imageSrcs)) {
 			this.imageSrcs = this.imageSrcs.split(",");
 		}
 		this.imageCount = this.imageSrcs.length
@@ -47,13 +47,13 @@
 		
 		this.$el[binder]("start." + pluginName, $.proxy(this, "start"))
 			[binder]("stop." + pluginName, $.proxy(this, "stop"))
-			[binder](this.opts.stopEvents, function() {
+			[binder](this.opts.stopEvent, function() {
 				that.$el.trigger("stop." + pluginName);
 			})
-			[binder](this.opts.startEvents, function() {
+			[binder](this.opts.startEvent, function() {
 				that.$el.trigger("start." + pluginName);
 			})
-			[binder](this.opts.stopStartEvents, function() {
+			[binder](this.opts.stopStartEvent, function() {
 				that.playing ? that.$el.trigger("stop." + pluginName) : that.$el.trigger("start." + pluginName);
 			});
 		
@@ -68,13 +68,24 @@
 	 */
 	Plugin.prototype.start = function () {
 		var that = this;
+		var oldIndex;
 		if (!this.playing) {
 			this.to = setInterval(function() {
-				that.index = (that.index+1) % that.imageCount;
+				
+				if(that.opts.random) {
+					oldIndex = that.index;
+					// Prevent plugin randomly choosing to show the same image again
+					while(oldIndex === that.index) {
+						that.index = Math.floor(Math.random() * that.imageCount) ;
+					}
+				} else {
+					that.index = (that.index+1) % that.imageCount;
+				}
 				that.showImage();
 			}, this.opts.speed);
 			this.playing = true;
 		}
+		
 	}
 
 	/**
@@ -176,9 +187,9 @@
 			}
 			startEvents.push(tempStart[i])
 		}
-		opts.startEvents = startEvents.join(" ");
-		opts.stopEvents = tempStop.join(" ");
-		opts.stopStartEvents = stopStartEvents.join(" ");
+		opts.startEvent = startEvents.join(" ");
+		opts.stopEvent = tempStop.join(" ");
+		opts.stopStartEvent = stopStartEvents.join(" ");
 	}
 
     /**
@@ -223,6 +234,7 @@
 	 * @param {String} onStop		Action to take after plugin is stopped: "reset" -> return to first image
 	 *																		"pause" -> stay on the last image to be displayed
 	 * @param {Boolean} keepOriginalImage	Whether or not to include the original image src in the list of images to cycle through
+	 * @param {Boolean} random	changes the order of cycling through images to random
 	 */
 	$.fn[pluginName].defaults = {
 		images: null,
@@ -234,8 +246,8 @@
 		stopEvent: "mouseout", 
 		autoStart: false,
 		onStop: "reset", 
-		keepOriginalImage: true
-	//	random: false 
+		keepOriginalImage: true,
+		random: false 
 		// to do include the jiggling around effect          
 	};
 	

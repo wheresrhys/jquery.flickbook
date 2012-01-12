@@ -22,7 +22,7 @@
 	
 	jasmine.getEnv().addReporter(new jasmine.TrivialReporter());
 	jasmine.getEnv().onComplete = function() {
-		window.parent && window.parent.nextTest($(".failed").length);
+		(window.parent !== window) && window.parent.nextTest($(".failed").length);
 	};
 	jasmine.getEnv().execute();
   

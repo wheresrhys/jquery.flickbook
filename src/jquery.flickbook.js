@@ -18,20 +18,6 @@
 
     // Create the defaults once
     var pluginName = 'flickbook',
-        defaults = {
-			images: null, // can take arrya, cooma separted string or an integer. idf one has same src as img element then ignore it
-			padImageIntegersBy: 0,
-			speed: 100,
-			root: "", // can be a string, on to which teh image is appended, or a string with {{}} into which teh image is insterted
-		//	imageType: "separate", // vertical sprite, horizontal sprite
-			startEvent: "mouseover", // or click, dbl click
-			stopEvent: "mouseout", // or click, dbl click, hover
-			autoStart: false,
-			onStop: "reset", // or pause
-			keepOriginalImage: true,// last, false
-			random: false 
-			// to do include the jiggling around effect          
-        },
 		binder = $.fn.on ? "on": "bind";
 
 
@@ -136,11 +122,11 @@
 	 * @param {Array} index		Position of the image in the images array
 	 */
 	Plugin.prototype.loadImage = function (index, shift) {
-		var that = this,
-			loader = $("<img style=\"display:none\" src=\"" + that.imageSrcs[index] + "\">").load(function () {
-				that.images[index + shift] = that.imageSrcs[index];
-				$.fn.flickbook.fetchedImages[that.imageSrcs[index]] = true;
-			});
+		var that = this;
+		$("<img src=\"" + that.imageSrcs[index] + "\">").load(function () {
+			that.images[index + shift] = that.imageSrcs[index];
+			$.fn.flickbook.fetchedImages[that.imageSrcs[index]] = true;
+		});
 	}
 
 	/**
@@ -203,15 +189,11 @@
 		opts.stopStartEvents = stopStartEvents.join(" ");
 	}
 
-	
-    
-   
-
     // A really lightweight plugin wrapper around the constructor,
     // preventing against multiple instantiations
-    $.fn.flickbook = function ( options ) {
+    $.fn[pluginName] = function ( options ) {
 		
-		options = $.extend( {}, defaults, options) ;
+		options = $.extend( {}, $.fn[pluginName].defaults, options) ;
 		
 		if (typeof options.images === "string") {
 			options.images = options.images.split(",");
@@ -229,6 +211,22 @@
         });
     }
 	
-	$.fn.flickbook.fetchedImages = {};
+	$.fn[pluginName].fetchedImages = {};
+	
+	$.fn[pluginName].defaults = {
+			images: null, // can take arrya, cooma separted string or an integer. idf one has same src as img element then ignore it
+			padImageIntegersBy: 0,
+			speed: 100,
+			root: "", // can be a string, on to which teh image is appended, or a string with {{}} into which teh image is insterted
+		//	imageType: "separate", // vertical sprite, horizontal sprite
+			startEvent: "mouseover", // or click, dbl click
+			stopEvent: "mouseout", // or click, dbl click, hover
+			autoStart: false,
+			onStop: "reset", // or pause
+			keepOriginalImage: true,// last, false
+			random: false 
+			// to do include the jiggling around effect          
+        };
+	
 
 })( jQuery, window, document );

@@ -63,6 +63,20 @@ describe("jquery.flickbook", function() {
 				keepOriginalImage: false
 			}, 2);
 		});
+		it("can use simple image src templates", function(){
+			checkCount({
+				images:["Image0282.jpg","Image0283.jpg","Image0284.jpg"],
+				imageTemplate: "../img/",
+				keepOriginalImage: false
+			}, 3);
+		})
+		it("can use advanced image src templates using {{}}", function(){
+			checkCount({
+				images:["Image0282","Image0283","Image0284"],
+				imageTemplate: "../img/{{}}.jpg",
+				keepOriginalImage: false
+			}, 3);
+		})
 		it("can handle strings as values for images", function() {
 			checkCount({
 				images:"../img/Image0282.jpg,../img/Image0283.jpg",

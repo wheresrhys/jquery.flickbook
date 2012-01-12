@@ -137,6 +137,32 @@
 	}
 
 	/**
+	 * @name Plugin.processImageSrcs
+	 * @private
+	 * @function
+	 * @description applies any templates to image urls
+	 */
+	Plugin.prototype.processImageSrcs = function() {
+		var that = this,
+			processSrc = (function () {
+				if (that.opts.imageTemplate.match("{{}}")) {
+					return function (src) {
+						return that.opts.imageTemplate.replace("{{}}", src);
+					}
+				} else {
+					return function (src) {
+						return that.opts.imageTemplate + src;
+					}
+				}
+			
+		})();
+
+		for(var i = 0, il = this.imageCount; i<il;i++) {
+			this.imageSrcs[i] = processSrc(this.imageSrcs[i]);
+		}
+	}
+
+	/**
 	 * @name Plugin.fetchImages
 	 * @private
 	 * @function
@@ -147,6 +173,8 @@
 		var shift = 0,
 			originalSrc = this.$el.attr("src");
 		this.images = [];
+		
+		this.opts.imageTemplate && this.processImageSrcs();
 		
 		// Put the original image at the start of the results when required
 		if(this.opts.keepOriginalImage && (originalSrc != this.imageSrcs[0])) {
@@ -165,13 +193,13 @@
     }
 
 	/**
-	 * @name processEvents
+	 * @name preProcessEvents
 	 * @private
 	 * @function
 	 * @description	Analyses the events that stop and start the plugin and pulls out all the events used to both stop and start the plugin
 	 * @param {Object} opts	The options object for this call of $.flickbook
 	 */
-	function processEvents(opts) {
+	function preProcessEvents(opts) {
 		var tempStart = opts.startEvent.split(" ").sort(),
 			tempStop = opts.stopEvent.split(" ").sort(),
 			stopEvents = [], 
@@ -208,8 +236,7 @@
 		} else if (!$.isArray(options.images)){
 			return;
 		}
-		
-		processEvents(options);
+		preProcessEvents(options);
 		
         return this.each(function () {
             if (!$.data(this, 'plugin_' + pluginName)) {
@@ -235,11 +262,13 @@
 	 *																		"pause" -> stay on the last image to be displayed
 	 * @param {Boolean} keepOriginalImage	Whether or not to include the original image src in the list of images to cycle through
 	 * @param {Boolean} random	changes the order of cycling through images to random
+	 * @param {string} imageTemplate	Template for image urls. If the string contains {{}} thsi is replaceed with the image string from imageSrcs, else it is appended on to the end
 	 */
 	$.fn[pluginName].defaults = {
 		images: null,
 	//	padImageIntegersBy: 0,
 		speed: 100,
+		imageTemplate: "",
 	//	root: "", // can be a string, on to which teh image is appended, or a string with {{}} into which teh image is insterted
 	//	imageType: "separate", // vertical sprite, horizontal sprite
 		startEvent: "mouseover",

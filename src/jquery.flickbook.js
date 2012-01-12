@@ -137,26 +137,6 @@
 	}
 
 
-	Plugin.prototype.processImageSrcs = function() {
-		var that = this,
-			processSrc = (function () {
-				if (that.opts.imageTemplate.match("{{}}")) {
-					return function (src) {
-						return that.opts.imageTemplate.replace("{{}}", src);
-					}
-				} else {
-					return function (src) {
-						return that.opts.imageTemplate + src;
-					}
-				}
-			
-		})();
-
-		for(var i = 0, il = this.imageCount; i<il;i++) {
-			this.imageSrcs[i] = processSrc(this.imageSrcs[i]);
-		}
-	}
-
 	/**
 	 * @name Plugin.processImageSrcs
 	 * @private

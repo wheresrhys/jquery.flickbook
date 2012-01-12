@@ -1,4 +1,3 @@
-(function(){
 /**
  * @name jQuery.flickbook
  * @public
@@ -6,8 +5,144 @@
  * @description	Turns an image into a flickbook type widget, which cycles through a series of images
  * @param {Object} opts	Object that sets configurable options (see $.fn.flickbook.defaults)
  */
-$.fn.flickbook = function(opts) {
+
+
+/*!
+* jQuery lightweight plugin boilerplate
+* Original author: @ajpiano
+* Further changes, comments: @addyosmani
+* Licensed under the MIT license
+*/
+;(function ( $, window, document, undefined ) {
+
+
+    // Create the defaults once
+    var pluginName = 'flickbook',
+        defaults = {
+			images: null, // can take arrya, cooma separted string or an integer. idf one has same src as img element then ignore it
+			padImageIntegersBy: 0,
+			speed: 100,
+			root: "", // can be a string, on to which teh image is appended, or a string with {{}} into which teh image is insterted
+		//	imageType: "separate", // vertical sprite, horizontal sprite
+			startEvent: "mouseover", // or click, dbl click
+			stopEvent: "mouseout", // or click, dbl click, hover
+			autoStart: false,
+			onStop: "reset", // or pause
+			keepOriginalImage: true,// last, false
+			random: false 
+			// to do include the jiggling around effect          
+        },
+		binder = $.fn.on ? "on": "bind";
+
+
+
+    // The actual plugin constructor
+    function Plugin( element, options ) {
+        this.el = element;
+		this.$el = $(element);
+		this.opts = options;
+        this._name = pluginName;
+
+        this.init();
+    }
 	
+	/**
+	 * @name start
+	 * @function
+	 * @private
+	 * @description	Starts cycling through the available images
+	 */
+	Plugin.prototype.start = function () {
+		var that = this;
+		if (!this.playing) {
+			this.to = setInterval(function() {
+				that.index = (that.index+1) % that.imageCount;
+				that.showImage();
+			}, this.opts.speed);
+			this.playing = true;
+		}
+	}
+
+	/**
+	 * @name stop
+	 * @function
+	 * @private
+	 * @description	Stops cycling through the available images
+	 */
+	Plugin.prototype.stop = function () {
+		if (this.playing) {
+			clearInterval(this.to);
+			if (this.opts.onStop === "reset") {
+				this.index = 0;
+			}
+			this.showImage();
+			this.playing = false;
+		}
+	}
+	
+	/**
+	 * @name start
+	 * @function
+	 * @private
+	 * @description	displays the next available image
+	 */
+	Plugin.prototype.showImage = function () {
+		var attempts = 0;
+		while(!this.images[this.index] && attempts < this.imageCount) {
+			this.index = (this.index+1) % this.imageCount;
+			attempts++;
+		}
+		this.$el.attr("src", this.images[this.index]);
+	}
+	
+	Plugin.prototype.playing = false;
+	Plugin.prototype.index = -1;
+	
+    Plugin.prototype.init = function () {
+		var that = this;
+		this.images = (this.$el.data(pluginName + "-images") || this.opts.images.slice());
+		
+		
+		if(!$.isArray(this.images)) {
+			this.images = this.images.split(",");
+		}
+		this.imageCount = this.images.length
+
+		this.fetchImages();
+		this.$el.data(pluginName + "-images", this.images);
+		
+		this.$el[binder]("start." + pluginName, $.proxy(this, "start"))
+			[binder]("stop." + pluginName, $.proxy(this, "stop"))
+			[binder](this.opts.stopEvents, function() {
+				that.$el.trigger("stop." + pluginName);
+			})
+			[binder](this.opts.startEvents, function() {
+				that.$el.trigger("start." + pluginName);
+			})
+			[binder](this.opts.stopStartEvents, function() {
+				that.playing ? that.$el.trigger("stop." + pluginName) : that.$el.trigger("start." + pluginName);
+			});
+		
+		this.opts.autoStart && this.start();
+    };
+
+
+	/**
+	 * @name loadImage
+	 * @private
+	 * @function
+	 * @description preloads an image
+	 *				(This is put in a function in order to maintain a reference to the index of teh image when the callback runs asynchronously)
+	 * @param {Array} index		Position of the image in the images array
+	 */
+	Plugin.prototype.loadImage = function (index, shift) {
+		var that = this,
+			loader = $("<img style=\"display:none\" src=\"" + that.imageSrcs[index] + "\">").load(function () {
+				that.images[index + shift] = that.imageSrcs[index];
+				$.fn.flickbook.fetchedImages[that.imageSrcs[index]] = true;
+			});
+	}
+
 	/**
 	 * @name fetchImages
 	 * @private
@@ -18,54 +153,36 @@ $.fn.flickbook = function(opts) {
 	 * @param {Boolean} keepOriginal	Whether or not to include teh original image src in the list of images to be cycled through
 	 * @return {Array}	Array containing url of each image fetched (won't necessarily be fully populated when returned, but is gradually populated as each image load event fires)
 	 */
-    function fetchImages(images, originalSrc, keepOriginal) {
+    Plugin.prototype.fetchImages = function () {
 				
-		/**
-		 * @name loadImage
-		 * @private
-		 * @function
-		 * @description preloads an image
-		 *				(This is put in a function in order to maintain a reference to the index of teh image when the callback runs asynchronously)
-		 * @param {Array} index		Position of the image in the images array
-		 */
-		function loadImage(index) {
-			var loader = $("<img style=\"display:none\" src=\"" + images[index] + "\">").load(function () {
-				result[index + shift] = images[index];
-				cache[images[index]] = true;
-				loader.remove();
-			});
-		}
-		
 		var shift = 0,
-			result = [],
-			cache = $.fn.flickbook.fetchedImages;
+			originalSrc = this.$el.attr("src");
+		this.imageSrcs = this.images;
+		this.images = [];
 		
 		// Put the original image at the start of the results when required
-		if(keepOriginal && (originalSrc != images[0])) {
-			result[0] = originalSrc;
-			cache[originalSrc] = true;
+		if(this.opts.keepOriginalImage && (originalSrc != this.imageSrcs[0])) {
+			this.images[0] = originalSrc;
+			$.fn.flickbook.fetchedImages[originalSrc] = true;
 			shift = 1;
 		}
 		
-        for(var i = 0, il = images.length; i<il; i++) {
-            if (cache[images[i]]) {
-				result[i + shift] = images[i];
+        for(var i = 0, il = this.imageSrcs.length; i<il; i++) {
+            if ($.fn.flickbook.fetchedImages[this.imageSrcs[i]]) {
+				this.images[i + shift] = this.imageSrcs[i];
 			} else {
-				loadImage(i);
+				this.loadImage(i, shift);
 			}
         }
-		
-        // can return result synchronously as it is a reference and will still get populated by the asynchronous image load callbacks
-		return result;
     }
-	
+
 	/**
 	 * @name processEvents
 	 * @private
 	 * @function
 	 * @description	Analyses the events that stop and start the plugin and pulls out all the events used to both stop and start the plugin
 	 */
-	function processEvents() {
+	function processEvents(opts) {
 		var tempStart = opts.startEvent.split(" ").sort(),
 			tempStop = opts.stopEvent.split(" ").sort(),
 			stopEvents = [], 
@@ -86,122 +203,32 @@ $.fn.flickbook = function(opts) {
 		opts.stopStartEvents = stopStartEvents.join(" ");
 	}
 
-	opts = $.extend($.fn.flickbook.defaults, opts);
 	
-	var index,
-		binder = $.fn.on ? "on": "bind";
-	
-    if (typeof opts.images === "string") {
-		opts.images = opts.images.split(",");
-	} else if (!$.isArray(opts.images)){
-		return;
-	}
-   
-	processEvents();
     
-	return this.each(function() {
-		
-		/**
-		 * @name start
-		 * @function
-		 * @private
-		 * @description	Starts cycling through the available images
-		 */
-		function start () {
-			if (!playing) {
-				to = setInterval(function() {
-					index = (index+1) % imageCount;
-					showImage();
-				}, opts.speed);
-				playing = true;
-			}
-		}
+   
 
-		/**
-		 * @name stop
-		 * @function
-		 * @private
-		 * @description	Stops cycling through the available images
-		 */
-		function stop() {
-			if (playing) {
-				clearInterval(to);
-				if (opts.onStop === "reset") {
-					index = 0;
-				}
-				showImage();
-				playing = false;
-			}
-		}
-
-		/**
-		 * @name start
-		 * @function
-		 * @private
-		 * @description	displays the next available image
-		 */
-		function showImage() {
-			var attempts = 0;
-			while(!images[index] && attempts < imageCount) {
-				index = (index+1) % imageCount;
-				attempts++;
-			}
-            $this.attr("src", images[index]);
-        }
+    // A really lightweight plugin wrapper around the constructor,
+    // preventing against multiple instantiations
+    $.fn.flickbook = function ( options ) {
 		
-		var $this = $(this),
-			images,
-			imageCount,
-			playing = false,
-			to,
-			index = -1;
+		options = $.extend( {}, defaults, options) ;
 		
-		images = ($this.data("flickbook-images") || opts.images.slice());
-		
-		if($this.hasClass("flickbooked")) {
+		if (typeof options.images === "string") {
+			options.images = options.images.split(",");
+		} else if (!$.isArray(options.images)){
 			return;
 		}
 		
-		if(!$.isArray(images)) {
-			images = images.split(",");
-		}
-		imageCount = images.length
-
-		images = fetchImages(images, $this.attr("src"), opts.keepOriginalImage);
-		$this.data("flickbook-images", images);
+		processEvents(options);
 		
-		$this[binder]("start.flickbook", start)
-			[binder]("stop.flickbook", stop)
-			[binder](opts.stopEvents, function() {
-				$this.trigger("stop.flickbook");
-			})
-			[binder](opts.startEvents, function() {
-				$this.trigger("start.flickbook");
-			})
-			[binder](opts.stopStartEvents, function() {
-				playing ? $this.trigger("stop.flickbook") : $this.trigger("start.flickbook");
-			});
-		
-		opts.autoStart && start();
-    });
-}
+        return this.each(function () {
+            if (!$.data(this, 'plugin_' + pluginName)) {
+                $.data(this, 'plugin_' + pluginName,
+                new Plugin( this, options ));
+            }
+        });
+    }
+	
+	$.fn.flickbook.fetchedImages = {};
 
-$.fn.flickbook.defaults = {
-	images: null, // can take arrya, cooma separted string or an integer. idf one has same src as img element then ignore it
-	padImageIntegersBy: 0,
-	speed: 100,
-	root: "", // can be a string, on to which teh image is appended, or a string with {{}} into which teh image is insterted
-//	imageType: "separate", // vertical sprite, horizontal sprite
-	startEvent: "mouseover", // or click, dbl click
-	stopEvent: "mouseout", // or click, dbl click, hover
-	autoStart: false,
-	onStop: "reset", // or pause
-	keepOriginalImage: true,// last, false
-	random: false 
-	// to do include the jiggling around effect
-};
-
-//list of already fetched images available to all instances
-$.fn.flickbook.fetchedImages = {};
-
-})();
+})( jQuery, window, document );

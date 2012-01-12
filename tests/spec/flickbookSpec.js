@@ -29,7 +29,7 @@ describe("jquery.flickbook", function() {
 	
 	it("won't try and initialise twice on the same element", function() {
 		runs(function() {
-			image.addClass("flickbooked").flickbook({
+			image.data("plugin_flickbook", true).flickbook({
 				images:["../img/Image0281.jpg","../img/Image0283.jpg","../img/Image0284.jpg"]
 			});
 		});

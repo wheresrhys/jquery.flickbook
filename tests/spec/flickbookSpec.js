@@ -333,6 +333,7 @@ describe("jquery.flickbook", function() {
 				}).trigger("start.flickbook");
 			});
 			pauseThen(function() {
+				//if the code enters an infiite loop in the handler for filckbook start (which indirectly calls showImage()) then this lien will never run
 				expect("this code to be called").toBe("this code to be called");
 			})
 			

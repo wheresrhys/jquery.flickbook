@@ -1,3 +1,4 @@
+(function(){
 /**
  * @name jQuery.flickbook
  * @public
@@ -28,19 +29,16 @@ $.fn.flickbook = function(opts) {
 		 * @param {Array} index		Position of the image in the images array
 		 */
 		function loadImage(index) {
-			var loader = $("<img style=\"display:none\" src=\"" + images[index] + "\">").appendTo($body).load(function () {
+			var loader = $("<img style=\"display:none\" src=\"" + images[index] + "\">").load(function () {
 				result[index + shift] = images[index];
-				cache[arr[index]] = true;
+				cache[images[index]] = true;
 				loader.remove();
 			});
 		}
 		
 		var shift = 0,
-			$body = $("body"),
 			result = [],
-			cache = $.fn.flickbook.fetchedImages,
-			i = 0,
-			il = images.length;
+			cache = $.fn.flickbook.fetchedImages;
 		
 		// Put the original image at the start of the results when required
 		if(keepOriginal && (originalSrc != images[0])) {
@@ -49,7 +47,7 @@ $.fn.flickbook = function(opts) {
 			shift = 1;
 		}
 		
-        for(; i<il; i++) {
+        for(var i = 0, il = images.length; i<il; i++) {
             if (cache[images[i]]) {
 				result[i + shift] = images[i];
 			} else {
@@ -206,3 +204,4 @@ $.fn.flickbook.defaults = {
 //list of already fetched images available to all instances
 $.fn.flickbook.fetchedImages = {};
 
+})();

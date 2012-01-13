@@ -28,7 +28,7 @@
 			var	iframe = document.createElement("iframe");
 			
 			body.appendChild(iframe);
-			iframe.src = "testSuite.php?jquery-version=" + version<?php echo (isset($_GET["min"])) ? "&min=true" : "" ?>;
+			iframe.src = "testSuite.php?jquery-version=" + version + "<?php echo (isset($_GET["min"])) ? "&min=true" : "" ?>";
 		}
 		
 		nextTest(true);

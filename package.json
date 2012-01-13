@@ -6,8 +6,8 @@
 	  "name" : "Rhys Evans",
 	  "url" : "http://wheresrhys.co.uk/"
   },
-  "description": "Turns a stack of images or a sprite into a flickbook that cycles through all the images",
-  "keywords": ["images", "slideshow", "animation", "novelty"],
+  "description": "Turns a stack of images into a flickbook that cycles through all the images",
+  "keywords": ["images","slideshow","animation","novelty","effects","visual","portfolio"],
   "homepage": "https://github.com/wheresrhys/jQuery-flickBook",
   "repository": {
     "type": "git",

@@ -34,12 +34,22 @@
 	 * @description	initialises the plugin
 	 */	
     Plugin.prototype.init = function () {
-		var that = this;
-		this.imageSrcs = (this.$el.data(pluginName + "-images") || this.opts.images.slice());
-		
-		if(!$.isArray(this.imageSrcs)) {
+		var that = this,
+			dataImages = this.$el.data(pluginName + "-images");
+		this.imageSrcs = (dataImages)					? dataImages :
+						($.isArray(this.opts.images))	? this.opts.images.slice() : // need to clone the array to make sure future changes only apply to this instance of the plugin
+														this.opts.images //string is cloned automatically, adn also don't need to worry about objects as the referenec will get overwritten to point to a new array
+		if(typeof this.imageSrcs === "string") {
 			this.imageSrcs = this.imageSrcs.split(",");
+		} else if (this.imageSrcs && !$.isArray(this.imageSrcs) && (typeof this.imageSrcs === "object") && this.imageSrcs.start && this.imageSrcs.end) {
+			this._getImageIndexesFromRange();
+		} 
+		
+		if (!$.isArray(this.imageSrcs) || !this.imageSrcs.length) {
+			this.aborted = true;
+			return;
 		}
+			
 		this.imageCount = this.imageSrcs.length
 
 		this.fetchImages();
@@ -59,6 +69,42 @@
 		
 		this.opts.autoStart && this.start();
     };
+
+	/**
+	 * @name Plugin._getImageIndexesFromRange
+	 * @function
+	 * @private
+	 * @description When the image urls are specified using a starting index and an end index, processes these to generate a list of imaege indexes (which can then be used by opts.imageTemplate
+	 */
+	Plugin.prototype._getImageIndexesFromRange = function() {
+		var that = this,
+			//Self executing function that returns a function to pad an integer with 0's if required
+			pad = (function() {
+				var padTo = that.imageSrcs.padTo;
+				if (padTo) {
+					return function (i) {
+						var result = i + "",
+							length = result.length,
+							adjustment = padTo - length
+						if(adjustment) {
+							while(adjustment--) {
+								result = "0" + result;
+							}
+						}
+						return result;
+					}
+				} else {
+					return function (i) {return i + "" }
+				}
+			})(),
+			start = this.imageSrcs.start,
+			end = this.imageSrcs.end,
+			arr = [];
+			for(var i = start; i<=end; i++) {
+				arr.push(pad(i));
+			}
+			this.imageSrcs = arr;
+	}
 
 	/**
 	 * @name Plugin.start
@@ -232,17 +278,16 @@
 		
 		options = $.extend( {}, $.fn[pluginName].defaults, options) ;
 		
-		if (typeof options.images === "string") {
-			options.images = options.images.split(",");
-		} else if (!$.isArray(options.images)){
-			return;
-		}
 		preProcessEvents(options);
 		
         return this.each(function () {
+			var instance;
             if (!$.data(this, 'plugin_' + pluginName)) {
-                $.data(this, 'plugin_' + pluginName,
-                new Plugin( this, options ));
+				instance = new Plugin( this, options );
+				if(!instance.aborted) {
+					$.data(this, 'plugin_' + pluginName, instance);
+				}
+				
             }
         });
     }
@@ -254,7 +299,11 @@
 	 * @name jQuery.flickbook.defaults
 	 * @public
 	 * @description	Object containing default configuration for the plugin
-	 * @param {String|Array} images	Array or CSV of image urls to cuycle through
+	 * @param {String|Array|Object} images	Array or CSV of image urls to cycle through or an object of the following format, which will genearte an array of integers that correspond to image urls 
+	 *										{
+	 *											start {Integer} : Starting index for the list of images
+	 *											end {Integer} : Last index for the list of images
+	 *											padTo {Integer}: Minimum character length of the integer (pads with zeroes if the integer is small)
 	 * @param {Integer} speed		Interval between each image change in ms
 	 * @param {String} startEvent	Name of event (or space separated list of events) that should trigger starting of the plugin
 	 * @param {String} stopEvent	Name of event (or space separated list of events) that should trigger stopping of the plugin
@@ -267,10 +316,8 @@
 	 */
 	$.fn[pluginName].defaults = {
 		images: null,
-	//	padImageIntegersBy: 0,
 		speed: 100,
 		imageTemplate: "",
-	//	root: "", // can be a string, on to which teh image is appended, or a string with {{}} into which teh image is insterted
 	//	imageType: "separate", // vertical sprite, horizontal sprite
 		startEvent: "mouseover",
 		stopEvent: "mouseout", 

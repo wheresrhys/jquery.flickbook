@@ -10,13 +10,13 @@ describe("jquery.flickbook", function() {
 		jQuery.fn.flickbook.fetchedImages = {};
 	});
 	
-	function checkCount(opts, expectedCount) {
+	function checkFetchedCount(opts, expectedCount) {
 		runs(function() {
 			image.flickbook(opts);
 		});
 		waits(500);
 		runs(function(){
-			var fetched = image.data("flickbook-images"),
+			var fetched = image.data("plugin_flickbook").images,
 				count = 0;
 			for(var key in fetched) {
 				if(fetched.hasOwnProperty(key)) {
@@ -26,66 +26,120 @@ describe("jquery.flickbook", function() {
 			expect(count).toBe(expectedCount);
 		});
 	}
-	
-	it("won't try and initialise twice on the same element", function() {
+	function checkUrlsCount(opts, expectedCount) {
 		runs(function() {
-			image.data("plugin_flickbook", true).flickbook({
-				images:["../img/Image0281.jpg","../img/Image0283.jpg","../img/Image0284.jpg"]
-			});
+			image.flickbook(opts);
+			var urls = image.data("plugin_flickbook").imageSrcs,
+				count = 0;
+			for(var key in urls) {
+				if(urls.hasOwnProperty(key)) {
+					count++;
+				}
+			}
+			expect(count).toBe(expectedCount);
 		});
-		waits(1000);
-		runs(function(){
-			expect(image.data("flickbook-images")).toBeUndefined();
-		})
-	});
-	it("won't initialise when no images provided", function() {
-		runs(function() {
-			image.addClass("flickbooked").flickbook({
-				images:null
+	}
+	describe("plugin inititialisation", function() {
+		it("won't try and initialise twice on the same element", function() {
+			runs(function() {
+				image.data("plugin_flickbook", true).flickbook({
+					images:["../img/Image0281.jpg","../img/Image0283.jpg","../img/Image0284.jpg"]
+				});
 			});
+			waits(1000);
+			runs(function(){
+				expect(image.data("flickbook-images")).toBeUndefined();
+			})
 		});
-		waits(1000);
-		runs(function(){
-			expect(image.data("flickbook-images")).toBeUndefined();
-		})
+		it("won't initialise when no images provided", function() {
+			runs(function() {
+				image.data("flickbook-images", null).flickbook({
+					images:null
+				});
+			});
+			waits(1000);
+			runs(function(){
+				expect(image.data("plugin_flickbook")).toBeUndefined();
+			})
+		});
 	});
-	
-	describe("Image loading", function(){
-		it("uses all available images", function() {
-			checkCount({
-				images:["../img/Image0282.jpg","../img/Image0283.jpg","../img/Image0284.jpg"],
+	describe("Image url generation", function(){
+		it("can handle arrays as values for images", function() {
+			checkUrlsCount({
+				images:["../img/Image0282.jpg","../img/Image0283.jpg"],
 				keepOriginalImage: false
-			}, 3);
+			}, 2);
 		});
-		it("doesn't try to use unavailable images", function() {
-			checkCount({
-				images:["../img/Image0282.jpg","../img/Image0283.jpg","../img/Image0290.jpg"],
+		it("can handle strings as values for images", function() {
+			checkUrlsCount({
+				images:"../img/Image0282.jpg,../img/Image0283.jpg",
 				keepOriginalImage: false
 			}, 2);
 		});
 		it("can use simple image src templates", function(){
-			checkCount({
+			checkUrlsCount({
 				images:["Image0282.jpg","Image0283.jpg","Image0284.jpg"],
 				imageTemplate: "../img/",
 				keepOriginalImage: false
 			}, 3);
 		})
 		it("can use advanced image src templates using {{}}", function(){
-			checkCount({
+			checkUrlsCount({
 				images:["Image0282","Image0283","Image0284"],
 				imageTemplate: "../img/{{}}.jpg",
 				keepOriginalImage: false
 			}, 3);
 		})
 		it("can handle strings as values for images", function() {
-			checkCount({
+			checkUrlsCount({
 				images:"../img/Image0282.jpg,../img/Image0283.jpg",
+				keepOriginalImage: false
+			}, 2);
+		});
+		
+		it("can get images using a range of integers", function() {
+			checkUrlsCount({
+				images:{
+					start: 282,
+					end: 284
+				},
+				keepOriginalImage: false,
+				imageTemplate: "../img/Image0{{}}.jpg"
+			}, 3);
+		});
+		
+		it("can get images using a range of integers with padding", function() {
+			runs(function() {
+				image.flickbook({
+					images:{
+						start: 8,
+						end: 12,
+						padTo: 3
+					},
+					keepOriginalImage: false
+				});
+				expect(image.data("plugin_flickbook").imageSrcs[1]).toBe("009");
+				expect(image.data("plugin_flickbook").imageSrcs[3]).toBe("011");
+			});
+		});
+	});	  
+	
+	describe("Image loading", function(){
+		it("uses all available images", function() {
+			checkFetchedCount({
+				images:["../img/Image0282.jpg","../img/Image0283.jpg","../img/Image0284.jpg"],
+				keepOriginalImage: false
+			}, 3);
+		});
+		it("doesn't try to use unavailable images", function() {
+			checkFetchedCount({
+				images:["../img/Image0282.jpg","../img/Image0283.jpg","../img/Image0290.jpg"],
 				keepOriginalImage: false
 			}, 2);
 		});
 		it("gets images from data-images when it exists", function() {
 			image.attr("data-flickbook-images", "../img/Image0284.jpg,../img/Image0285.jpg");
-			checkCount({
+			checkFetchedCount({
 				images:["../img/Image0282.jpg","../img/Image0283.jpg","../img/Image0284.jpg"],
 				keepOriginalImage: false
 			}, 2);
@@ -105,32 +159,32 @@ describe("jquery.flickbook", function() {
 			});
 		});
 		it("keeps the original image when requested to do so", function() {
-			checkCount({
+			checkFetchedCount({
 				images:["../img/Image0282.jpg","../img/Image0283.jpg","../img/Image0284.jpg"],
 				keepOriginalImage: true
 			}, 4);
 		});
 		it("defaults to keeping the original image", function() {
-			checkCount({
+			checkFetchedCount({
 				images:["../img/Image0282.jpg","../img/Image0283.jpg","../img/Image0284.jpg"]
 			}, 4);
 		});
 		it("removes the original image when requested", function() {
-			checkCount({
+			checkFetchedCount({
 				images:["../img/Image0282.jpg","../img/Image0283.jpg","../img/Image0284.jpg"],
 				keepOriginalImage: false
 			}, 3);
 		});
 		it("doesn't duplicate when initial src equals the first image in the data", function() {
-			checkCount({
+			checkFetchedCount({
 				images:["../img/Image0281.jpg","../img/Image0283.jpg","../img/Image0284.jpg"],
 				keepOriginalImage: true
 			}, 3);
-		});
-//		it("uses the image root template properly", function() {});
-//		it("works properly when images is an integer", function() {});
-		
-	});	  
+		});		
+
+	});
+	
+
 	
 	describe("starting and stopping of animations", function(){
 		var speed = 100;

@@ -1,11 +1,11 @@
 /*!
  * @name jQuery.flickbook
- * @description	Turns an image into a flickbook type widget, which cycles through a series of images
+ * @description	Turns an image into a flickbook type widget, cycling through a series of images
  * Licensed under the MIT license
 */
 ;(function ( $, window, document, undefined ) {
 
-    var pluginName = 'flickbook',
+    var pluginName = 'flickbook', 
 		binder = $.fn.on ? "on": "bind"; // ensures backwards compatibility with versiosn prior to 1.7
 
 

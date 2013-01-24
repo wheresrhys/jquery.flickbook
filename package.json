@@ -1,20 +1,14 @@
 {
-  "name": "flickbook",
-  "title": "jQuery Flickbook",
-  "version": "0.2",
-  "author": {
-	  "name" : "Rhys Evans",
-	  "url" : "http://wheresrhys.co.uk/"
+  "name": "jquery-plugin",
+  "version": "0.0.0-ignored",
+  "engines": {
+    "node": ">= 0.6.0"
   },
-  "description": "Turns a stack of images into a flickbook that cycles through all the images",
-  "keywords": ["images","slideshow","animation","novelty","effects","visual","portfolio"],
-  "homepage": "https://github.com/wheresrhys/jQuery-flickBook",
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/wheresrhys/jQuery-flickBook.git"
+  "scripts": {
+    "test": "grunt jasmine"
   },
-  "dependencies": {
-    "jquery": ">=1.5"
-  },
-  "files": "releases"
+  "devDependencies": {
+    "grunt": "~0.3.17",
+    "grunt-jasmine-runner": "0.6.0"
+  }
 }

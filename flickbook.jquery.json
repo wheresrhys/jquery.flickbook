@@ -1,0 +1,29 @@
+{
+  "name": "flickbook",
+  "title": "Flickbook",
+  "description": "A jQuery plugin for cycling through a stack of images",
+  "version": "0.2.0",
+  "homepage": "",
+  "author": {
+    "name": "Rhys Evans",
+    "email": "wheresrhys@gmail.com",
+    "url": "http://wheresrhys.co.uk"
+  },
+  "repository": {
+    "type": "git",
+    "url": "JavaScriptPHP"
+  },
+  "bugs": {
+    "url": "A jQuery plugin for cycling through a stack of images"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "/blob/master/LICENSE-MIT"
+    }
+  ],
+  "dependencies": {
+    "jquery": "1.5"
+  },
+  "keywords": []
+}

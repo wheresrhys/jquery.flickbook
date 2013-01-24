@@ -15,7 +15,14 @@ In your web page:
 <script src="dist/flickbook.min.js"></script>
 <script>
 jQuery(function($) {
-  $.awesome(); // "awesome"
+  	$.('img').flickbook({
+	  	images: 'img1.jpg,img2.jpg,img3.jpg',
+	  	speed: 100,
+        startEvent: "click",
+        stopEvent: "click", 
+        autoStart: false,
+        onStop: "reset", 
+    }); 
 });
 </script>
 ```

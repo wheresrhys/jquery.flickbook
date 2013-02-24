@@ -2,7 +2,7 @@
   "name": "flickbook",
   "title": "Flickbook",
   "description": "A jQuery plugin for cycling through a stack of images",
-  "version": "0.2.0",
+  "version": "0.2.0b",
   "homepage": "",
   "author": {
     "name": "Rhys Evans",
